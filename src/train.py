@@ -1,149 +1,105 @@
 import os
 import torch
-import torchvision
-from torchvision import models, transforms, datasets
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights
-from PIL import Image
 import torch.utils.data as data
-import copy, tqdm
 from ignite.engine import Engine, Events
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
-import pandas as pd
 
 from argparse import ArgumentParser
 
-ROOT_DIR='Datasets/'
+from dataset import SmartathonImageDataset
+from model import init_model
 
-# load a model pre-trained on COCO
-model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
 
-num_classes = 12  # 11 classes + background
-# get number of input features for the classifier
-in_features = model.roi_heads.box_predictor.cls_score.in_features
-# replace the pre-trained head with a new one
-model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+def save_checkpoint(model, optimizer, metrics, path):
+    checkpoint_dict = {'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict()}
+    checkpoint_dict.update(metrics)
+    torch.save(checkpoint_dict, path)
 
-# freeze the entire model
-for parameter in model.parameters():
-  parameter.requires_grad = False
 
-# unfreeze the predictor
-for parameter in model.roi_heads.box_predictor.parameters():
-  parameter.requires_grad = True
+def main(args):
+    model, transforms = init_model(args)
+    img_dir = args.data_dir+'/resized_images/'
+    train_data = SmartathonImageDataset(args.data_dir+'/train_split.csv', img_dir, transform=transforms)
+    val_data = SmartathonImageDataset(args.data_dir+'/val_split.csv', img_dir, transform=transforms)
 
-transforms = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()
+    train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size)
+    valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size)
 
-IMG_ROOT = ROOT_DIR+'dataset/resized_images/'
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+    meanAP = MeanAveragePrecision(iou_type="bbox")
 
-class SmartathonImageDataset(data.Dataset):
-    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
-        self.img_labels = pd.read_csv(annotations_file)
-        self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
+    cpu_device = torch.device('cpu')
+    device = torch.device('cuda')
+    model.to(device)
 
-    def __len__(self):
-        return len(self.img_labels)
-
-    def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 1])
-        image = Image.open(img_path)
-        # class 0 is reserved for background according to the docs
-        label = int(self.img_labels.iloc[idx, 0])+1
-        # extract the bounding box coordinates
-        xmax, xmin, ymax, ymin = list(map(int, self.img_labels.iloc[idx, 3:7]))
-        width, height = image.size
-        def adjust_bb(c, lim):
-          if c < 0: return 0
-          if c >= lim: return lim-1
-          return c
-        xmax, xmin, ymax, ymin = adjust_bb(xmax, width+1), adjust_bb(xmin, width), adjust_bb(ymax, height+1), adjust_bb(ymin, height)
-        if xmin == xmax:
-          xmax = xmin+1
-        if ymin == ymax:
-          ymax = ymin+1
-        coords = [xmin, ymin, xmax, ymax]
-        area = (ymax-ymin)*(xmax-xmin)
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        target = dict(labels=label, boxes=torch.tensor(coords), areas=area)
-        return image, target
-
-train_data = SmartathonImageDataset(ROOT_DIR+'dataset/train_split.csv', IMG_ROOT, transform=transforms)
-
-val_data = SmartathonImageDataset(ROOT_DIR+'dataset/val_split.csv', IMG_ROOT, transform=transforms)
-
-test_data = SmartathonImageDataset(ROOT_DIR+'dataset/test_split.csv', IMG_ROOT, transform=transforms)
-
-test2_data = SmartathonImageDataset(ROOT_DIR+'dataset/test2_split.csv', IMG_ROOT, transform=transforms)
-
-BATCH_SIZE = 8
-
-train_iterator = data.DataLoader(train_data,
-                                 shuffle=True,
-                                 batch_size=BATCH_SIZE)
-
-valid_iterator = data.DataLoader(val_data,
-                                 batch_size=BATCH_SIZE)
-
-test_iterator = data.DataLoader(test_data,
-                                batch_size=BATCH_SIZE)
-
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
-meanAP = MeanAveragePrecision(iou_type="bbox")
-
-cpu_device = torch.device('cpu')
-device = torch.device('cuda')
-model.to(device)
-
-def train_step(engine, batch):
-    model.train()
-    images, targets = batch
-    images = images.to(device)
-    targets = {k: v.to(device) for k,v in targets.items()}
-    images = list(image for image in images)
-    labels = list(label.unsqueeze(0) for label in targets['labels'])
-    boxes = [box.unsqueeze(0) for box in  targets['boxes']]
-    targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
-
-    loss_dict = model(images, targets)
-    losses = sum(loss for loss in loss_dict.values())
-
-    optimizer.zero_grad()
-    losses.backward()
-    optimizer.step()
-    lr_scheduler.step()
-    return losses.item()
-
-trainer = Engine(train_step)
-
-def validation_step(engine, batch):
-    model.eval()
-    with torch.no_grad():
+    def train_step(engine, batch):
+        model.train()
         images, targets = batch
+        images = images.to(device)
+        targets = {k: v.to(device) for k,v in targets.items()}
+        images = list(image for image in images)
         labels = list(label.unsqueeze(0) for label in targets['labels'])
         boxes = [box.unsqueeze(0) for box in  targets['boxes']]
         targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
-        images = images.to(device)
-        images = list(image for image in images)
-        outputs = model(images)
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        meanAP.update(outputs, targets)
 
-evaluator = Engine(validation_step)
+        loss_dict = model(images, targets)
+        losses = sum(loss for loss in loss_dict.values())
 
-@trainer.on(Events.ITERATION_COMPLETED(every=25))
-def log_training_loss(trainer):
-    print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] Loss: {trainer.state.output:.2f}")
+        optimizer.zero_grad()
+        losses.backward()
+        optimizer.step()
+        lr_scheduler.step()
+        return losses.item()
 
-@trainer.on(Events.EPOCH_COMPLETED)
-def log_validation_results(trainer):
-    meanAP.reset()
-    evaluator.run(valid_iterator)
-    meanAP_metrics = meanAP.compute()
-    print(f"Validation Results - Epoch[{trainer.state.epoch}]  meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
+    trainer = Engine(train_step)
 
-trainer.run(train_iterator, max_epochs=10)
+    def validation_step(engine, batch):
+        model.eval()
+        with torch.no_grad():
+            images, targets = batch
+            labels = list(label.unsqueeze(0) for label in targets['labels'])
+            boxes = [box.unsqueeze(0) for box in  targets['boxes']]
+            targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
+            images = images.to(device)
+            images = list(image for image in images)
+            outputs = model(images)
+            outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            meanAP.update(outputs, targets)
+
+    evaluator = Engine(validation_step)
+
+    @trainer.on(Events.ITERATION_COMPLETED(every=100))
+    def log_training_loss(trainer):
+        print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] Loss: {trainer.state.output:.2f}")
+
+    @trainer.on(Events.EPOCH_COMPLETED)
+    def log_validation_results(trainer):
+        meanAP.reset()
+        evaluator.run(valid_iterator)
+        meanAP_metrics = meanAP.compute()
+        print(f"Validation Results - Epoch[{trainer.state.epoch}]  \
+            meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
+        chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
+        print(f"Saving checkpoint to {chkpt_path}...")
+        save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
+
+    trainer.run(train_iterator, max_epochs=10)
+
+if __name__ == "__main__":
+    parser = ArgumentParser(description='Process some integers.')
+    parser.add_argument('-m', '--model_type', dest='model_type', 
+        help='type of model to train, see model.py for supported model types')
+    parser.add_argument('-d', '--data_dir', dest='data_dir', 
+        help='root directory of the dataset')
+    parser.add_argument('-b', '--batch_size', dest='batch_size', default=8, type=int,
+        help="batch size during training")
+    parser.add_argument('-vb', '--valid_batch_size', dest='valid_batch_size', default=8, type=int,
+        help="batch size during validation")
+    parser.add_argument('-o', '--output_prefix', dest='output_prefix',
+        help="output path for model checkpoints")
+    parser.add_argument('--lr', dest='learning_rate', type=float, default=1e-5,
+        help="learning rate for optimizer")
+    args = parser.parse_args()
+    main(args)
