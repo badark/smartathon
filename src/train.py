@@ -19,9 +19,9 @@ def save_checkpoint(model, optimizer, metrics, path):
 
 def main(args):
     model, transforms = init_model(args)
-    img_dir = args.data_dir+'/resized_images/'
-    train_data = SmartathonImageDataset(args.data_dir+'/train_split.csv', img_dir, transform=transforms)
-    val_data = SmartathonImageDataset(args.data_dir+'/val_split.csv', img_dir, transform=transforms)
+    img_dir = os.path.join(args.data_dir,'resized_images/')
+    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.csv'), img_dir, transform=transforms)
+    val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.csv'), img_dir, transform=transforms)
 
     train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size)
     valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size)
@@ -38,7 +38,7 @@ def main(args):
         model.train()
         images, targets = batch
         images = images.to(device)
-        targets = {k: v.to(device) for k,v in targets.items()}
+        targets = {k: v.to(device) for k,v in targets.items() if k != 'img_paths'}
         images = list(image for image in images)
         labels = list(label.unsqueeze(0) for label in targets['labels'])
         boxes = [box.unsqueeze(0) for box in  targets['boxes']]
@@ -102,4 +102,5 @@ if __name__ == "__main__":
     parser.add_argument('--lr', dest='learning_rate', type=float, default=1e-5,
         help="learning rate for optimizer")
     args = parser.parse_args()
+    os.makedirs(args.output_prefix, exist_ok = True) 
     main(args)

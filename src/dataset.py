@@ -36,5 +36,5 @@ class SmartathonImageDataset(torch.utils.data.Dataset):
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
-        target = dict(labels=label, boxes=torch.tensor(coords), areas=area)
+        target = dict(labels=label, boxes=torch.tensor(coords), areas=area, img_paths=img_path)
         return image, target
