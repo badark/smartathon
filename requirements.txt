@@ -1,0 +1,5 @@
+torchvision
+pytorch-ignite
+torchmetrics
+pandas
+pillow
