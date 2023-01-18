@@ -27,7 +27,6 @@ def main(args):
     
     test_iterator = data.DataLoader(test_data, batch_size=args.batch_size, collate_fn=collate_fn)
 
-    print(test_iterator.next())
 
     meanAP = MeanAveragePrecision(iou_type="bbox")
 
@@ -42,16 +41,16 @@ def main(args):
         with torch.no_grad():
             images, targets = batch
             images = list(image.to(device) for image in images)
+            img_keys = [t['img_keys'] for t in targets]
             targets = [{k: v.to(device) for k, v in t.items() if k != 'img_keys'} for t in targets]
             # - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
             # ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
             # - labels (``Int64Tensor[N]``): the predicted labels for each detection
             # - scores (``Tensor[N]``): the scores of each detection
             outputs = model(images)
-            outputs = [{k: v.to() for k, v in t.items()} for t in outputs] #took out cpu_devie in v.to() as it creates an issue moving tensors between gpu and cpu
+            outputs = [{k: v for k, v in t.items()} for t in outputs]
             meanAP.update(outputs, targets)
-            print(outputs)
-            print([t for t in targets])
+            print(img_keys)
             break
         
     meanAP_metrics = meanAP.compute()
