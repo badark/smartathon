@@ -17,8 +17,14 @@ def load_checkpoint(checkpoint_file, model):
 def main(args):
     model, transforms = init_model(args)
     model = load_checkpoint(args.checkpoint_file, model)
-    img_dir = args.data_dir+'/resized_images/'
-    test_data = SmartathonImageDataset(args.data_dir+'/test_split.csv', img_dir, transform=transforms)
+    if os.name == 'nt':
+        img_dir = args.data_dir+'\\resized_images\\'
+        test_data = SmartathonImageDataset(args.data_dir+'\\test_split.json', img_dir, transform=transforms)
+    else:
+        img_dir = args.data_dir+'/test_split.csv/'
+        test_data = SmartathonImageDataset(args.data_dir+'/test_split.json', img_dir, transform=transforms)
+
+    
     test_iterator = data.DataLoader(test_data, batch_size=args.batch_size)
 
     meanAP = MeanAveragePrecision(iou_type="bbox")
