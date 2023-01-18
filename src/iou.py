@@ -1,36 +1,45 @@
-
-
-
-def bb_intersection_over_union(boxA, boxB):
-    # determine the (x, y)-coordinates of the intersection rectangle
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[2], boxB[2])
-    yB = min(boxA[3], boxB[3])
-
-    # compute the area of intersection rectangle
-    interArea = abs(max((xB - xA, 0)) * max((yB - yA), 0))
-    if interArea == 0:
-        return 0
-    # compute the area of both the prediction and ground-truth
-    # rectangles
-    boxAArea = abs((boxA[2] - boxA[0]) * (boxA[3] - boxA[1]))
-    boxBArea = abs((boxB[2] - boxB[0]) * (boxB[3] - boxB[1]))
-
-    # compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the interesection area
-    iou = interArea / float(boxAArea + boxBArea - interArea)
-
-    # return the intersection over union value
+import numpy as np
+np.__version__
+def get_iou(boxGround, boxPred):
+    # coordinates of the area of intersection.
+    ix1 = np.maximum(boxGround[0], boxPred[0])
+    iy1 = np.maximum(boxGround[1], boxPred[1])
+    ix2 = np.minimum(boxGround[2], boxPred[2])
+    iy2 = np.minimum(boxGround[3], boxPred[3])
+     
+    # Intersection height and width.
+    i_height = np.maximum(iy2 - iy1 , np.array(0.))
+    i_width = np.maximum(ix2 - ix1 , np.array(0.))
+     
+    area_of_intersection = i_height * i_width
+     
+    # Ground Truth dimensions.
+    gt_height = boxGround[3] - boxGround[1] 
+    gt_width = boxGround[2] - boxGround[0] 
+     
+    # Prediction dimensions.
+    pd_height = boxPred[3] - boxPred[1] 
+    pd_width = boxPred[2] - boxPred[0] 
+     
+    area_of_union = gt_height * gt_width + pd_height * pd_width - area_of_intersection
+    print("Area Ground")
+    print(gt_height * gt_width)
+    print("Area Predict")
+    print(pd_height * pd_width)
+    print("Area Union")
+    print(area_of_union)
+    print("Area Intersect")
+    print(area_of_intersection)
+    iou = area_of_intersection / area_of_union
+     
     return iou
 
 if __name__ == '__main__':
     # Pointing out a wrong IoU implementation in https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
-    boxA = [797, 701, 262, 211]
-    boxB = [932, 786, 329, 238]
+    boxTruth = [1202, 123, 1650, 868]
+    boxPrediction = [1,1,1,1]
 
-    correct = bb_intersection_over_union(boxA, boxB)
+    correct = get_iou(boxTruth, boxPrediction)
 
 # Load CSV
 # Process CSV file and convert to dictionary (key by image path) and will gather bounding boxes
@@ -38,5 +47,5 @@ if __name__ == '__main__':
 # for extra, label as "bad"; for fewer label 'recall'
 
 
-    print('Correct solution - also analytical: {0}\n'
+    print('Correct solution - also analytical: {}\n'
           .format(correct))
