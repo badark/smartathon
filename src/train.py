@@ -1,4 +1,4 @@
-import os
+import os, sys
 import torch
 import torch.utils.data as data
 from ignite.engine import Engine, Events
@@ -109,4 +109,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     os.makedirs(args.output_prefix, exist_ok = True) 
     logging.basicConfig(filename=os.path.join(args.output_prefix, 'log.txt'),level=logging.INFO)
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     main(args)
