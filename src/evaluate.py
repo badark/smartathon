@@ -7,7 +7,7 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from argparse import ArgumentParser
 
 from dataset import SmartathonImageDataset
-from utils import init_model
+from utils import init_model, init_optimizer, collate_fn
 
 def load_checkpoint(checkpoint_file, model):
     checkpoint = torch.load(checkpoint_file)
@@ -17,6 +17,7 @@ def load_checkpoint(checkpoint_file, model):
 def main(args):
     model, transforms = init_model(args)
     model = load_checkpoint(args.checkpoint_file, model)
+    
     if os.name == 'nt':
         img_dir = args.data_dir+'\\resized_images\\'
         test_data = SmartathonImageDataset(args.data_dir+'\\test_split.json', img_dir, transform=transforms)
@@ -25,7 +26,7 @@ def main(args):
         test_data = SmartathonImageDataset(args.data_dir+'/test_split.json', img_dir, transform=transforms)
 
     
-    test_iterator = data.DataLoader(test_data, batch_size=args.batch_size)
+    test_iterator = data.DataLoader(test_data, batch_size=args.batch_size, collate_fn=collate_fn)
 
     meanAP = MeanAveragePrecision(iou_type="bbox")
 
@@ -46,7 +47,7 @@ def main(args):
             # - labels (``Int64Tensor[N]``): the predicted labels for each detection
             # - scores (``Tensor[N]``): the scores of each detection
             outputs = model(images)
-            outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            outputs = [{k: v.to() for k, v in t.items()} for t in outputs] #took out cpu_devie in v.to() as it creates an issue moving tensors between gpu and cpu
             meanAP.update(outputs, targets)
         
     meanAP_metrics = meanAP.compute()
