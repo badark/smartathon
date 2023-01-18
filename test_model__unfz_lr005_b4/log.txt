@@ -1,0 +1,2 @@
+INFO:ignite.engine.engine.Engine:Engine run starting with max_epochs=10.
+INFO:root:Epoch[1] Iteration[100]             LR[0.0005045000000000001]             Loss: 0.79             Time: 76.94s

@@ -10,6 +10,8 @@ from argparse import ArgumentParser
 from dataset import SmartathonImageDataset
 from utils import init_model, init_optimizer, collate_fn
 
+import logging
+
 
 def save_checkpoint(model, optimizer, metrics, path):
     checkpoint_dict = {'model_state_dict': model.state_dict(),
@@ -69,7 +71,7 @@ def main(args):
 
     @trainer.on(Events.ITERATION_COMPLETED(every=100))
     def log_training_loss(trainer):
-        print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] \
+        logging.info(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] \
             LR{lr_scheduler.get_last_lr()} \
             Loss: {trainer.state.output:.2f} \
             Time: {timer.value():.2f}s")
@@ -78,11 +80,11 @@ def main(args):
     def log_validation_results(trainer):
         evaluator.run(valid_iterator)
         meanAP_metrics = meanAP.compute()
-        print(f"Validation Results - Epoch[{trainer.state.epoch}]  \
+        logging.info(f"Validation Results - Epoch[{trainer.state.epoch}]  \
             meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
-        print("\tMetrics:" + ",".join([f"{k}: ({v:.3f})" for k, v in meanAP_metrics.items()])) 
+        logging.info("\tMetrics:" + ",".join([f"{k}: ({v:.3f})" for k, v in meanAP_metrics.items()])) 
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
-        print(f"Saving checkpoint to {chkpt_path}...")
+        logging.info(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
         meanAP.reset()
 
@@ -90,8 +92,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
-    parser.add_argument('-m', '--model_type', dest='model_type', 
-        help='type of model to train, see model.py for supported model types')
+    parser.add_argument('-m', '--model_type', dest='model_type', default="resnet50",
+        help='type of model to train, see utils.py for supported model types')
+    parser.add_argument('-op', '--optim_type', dest='optim_type', default="sgd",
+        help='type of optimizer for training, see utils.py for supported optimizer types')
     parser.add_argument('-d', '--data_dir', dest='data_dir', 
         help='root directory of the dataset')
     parser.add_argument('-b', '--batch_size', dest='batch_size', default=8, type=int,
@@ -104,4 +108,5 @@ if __name__ == "__main__":
         help="learning rate for optimizer")
     args = parser.parse_args()
     os.makedirs(args.output_prefix, exist_ok = True) 
+    logging.basicConfig(filename=os.path.join(args.output_prefix, 'log.txt'),level=logging.INFO)
     main(args)
