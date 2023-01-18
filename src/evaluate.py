@@ -1,13 +1,14 @@
 import os
 import torch
 import torch.utils.data as data
+import pandas as pd
 from ignite.engine import Engine, Events
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 from argparse import ArgumentParser
 
 from dataset import SmartathonImageDataset
-from utils import init_model, init_optimizer, collate_fn
+from utils import init_model, init_optimizer, collate_fn, dict_to_string, write_string_csv
 
 def load_checkpoint(checkpoint_file, model):
     checkpoint = torch.load(checkpoint_file)
@@ -35,6 +36,7 @@ def main(args):
     model.to(device)
     model.eval()
 
+    header = ['labels','image_path', 'xmax','xmin','ymax','ymin', 'scores']
     out_csv_list = []
 
     for batch in test_iterator:
@@ -51,14 +53,15 @@ def main(args):
             outputs = [{k: v for k, v in t.items()} for t in outputs]
             meanAP.update(outputs, targets)
             print(img_keys)
-            break
+            out_csv_list.append(dict_to_string(img_keys,outputs))
+
         
     meanAP_metrics = meanAP.compute()
     print(f"Test Results - meanAP: {meanAP_metrics['map']:.2f}")
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
-
+    write_string_csv(out_csv_list,header,'outFile.csv')
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')

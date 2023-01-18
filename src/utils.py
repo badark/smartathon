@@ -2,6 +2,9 @@ import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights, FasterRCNN_ResNet50_FPN_V2_Weights
 from collections import defaultdict
+import pandas as pd
+import csv
+
 
 
 def init_model(args):
@@ -53,3 +56,38 @@ def csv_to_dict(csv_data):
 
 def collate_fn(batch):
     return tuple(zip(*batch))
+
+def dict_to_string(images, coord_data_class):
+
+    full_data_set  = pd.DataFrame(columns = ['labels','image_path', 'xmax','xmin','ymax','ymin', 'scores'])
+
+    for i in images:
+        for j in coord_data_class:
+            boxes = j.get('boxes')
+            labels = j.get('labels')
+            scores = j.get('scores')
+
+            my_df = pd.DataFrame(boxes.cpu().numpy(), columns = ['xmax','xmin','ymax','ymin'])
+            my_df['labels'] = labels.cpu().numpy()
+            my_df['scores'] = scores.cpu().numpy()
+            my_df['image_path'] = i
+    
+            full_data_set = pd.concat([full_data_set, my_df])
+            #full_data_set.to_csv('file1.csv',index=False) #save to file for testing
+            #stringF = full_data_set.to_string(index=False,header=False)
+            #print(stringF)
+            #break;
+               
+    return(full_data_set.to_string(index=False,header=False))
+    
+    
+def write_string_csv(string_obj, headername, filename):
+        #only thing missing is the class name
+            with open(filename, 'w', encoding='UTF8') as f:
+                writer = csv.writer(f)
+
+                # write the header
+                writer.writerow(headername)
+
+                # write the data
+                writer.writerow(string_obj)
