@@ -22,11 +22,12 @@ def main(args):
         img_dir = args.data_dir+'\\resized_images\\'
         test_data = SmartathonImageDataset(args.data_dir+'\\test_split.json', img_dir, transform=transforms)
     else:
-        img_dir = args.data_dir+'/test_split.csv/'
+        img_dir = args.data_dir+'/resized_images/'
         test_data = SmartathonImageDataset(args.data_dir+'/test_split.json', img_dir, transform=transforms)
-
     
     test_iterator = data.DataLoader(test_data, batch_size=args.batch_size, collate_fn=collate_fn)
+
+    print(test_iterator.next())
 
     meanAP = MeanAveragePrecision(iou_type="bbox")
 
@@ -49,6 +50,9 @@ def main(args):
             outputs = model(images)
             outputs = [{k: v.to() for k, v in t.items()} for t in outputs] #took out cpu_devie in v.to() as it creates an issue moving tensors between gpu and cpu
             meanAP.update(outputs, targets)
+            print(outputs)
+            print([t for t in targets])
+            break
         
     meanAP_metrics = meanAP.compute()
     print(f"Test Results - meanAP: {meanAP_metrics['map']:.2f}")
