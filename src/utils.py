@@ -15,13 +15,13 @@ def init_model(args):
         # replace the pre-trained head with a new one
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
-        # freeze the entire model
-        for parameter in model.parameters():
-            parameter.requires_grad = False
+        # # freeze the entire model
+        # for parameter in model.parameters():
+        #     parameter.requires_grad = False
 
-        # unfreeze the predictor
-        for parameter in model.roi_heads.box_predictor.parameters():
-            parameter.requires_grad = True
+        # # unfreeze the predictor
+        # for parameter in model.roi_heads.box_predictor.parameters():
+        #     parameter.requires_grad = True
 
         transforms = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()
     else:
@@ -30,9 +30,14 @@ def init_model(args):
     return model, transforms
 
 def init_optimizer(model, args):
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate,
+    params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.SGD(params, lr=args.learning_rate,
                                 momentum=0.9, weight_decay=0.0005)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+    warmup_factor = 1.0 / 1000
+    warmup_iters = 1000
+    lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, 
+        start_factor=warmup_factor, 
+        total_iters=warmup_iters)
     return optimizer, lr_scheduler
 
 def csv_to_dict(csv_data):

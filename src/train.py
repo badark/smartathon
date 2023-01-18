@@ -2,6 +2,7 @@ import os
 import torch
 import torch.utils.data as data
 from ignite.engine import Engine, Events
+from ignite.handlers import Timer
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 from argparse import ArgumentParser
@@ -23,8 +24,10 @@ def main(args):
     train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.json'), img_dir, transform=transforms)
     val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.json'), img_dir, transform=transforms)
 
-    train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size, collate_fn=collate_fn)
-    valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size, collate_fn=collate_fn)
+    train_iterator = data.DataLoader(train_data, shuffle=True, 
+        batch_size=args.batch_size, collate_fn=collate_fn)
+    valid_iterator = data.DataLoader(val_data, shuffle=False,
+        batch_size=args.valid_batch_size, collate_fn=collate_fn)
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     optimizer, lr_scheduler = init_optimizer(model, args)
@@ -33,7 +36,7 @@ def main(args):
     cpu_device = torch.device('cpu')
     device = torch.device('cuda')
     model.to(device)
-
+    
     def train_step(engine, batch):
         model.train()
         images, targets = batch
@@ -48,6 +51,9 @@ def main(args):
         return losses.item()
 
     trainer = Engine(train_step)
+    timer = Timer()
+    timer.attach(trainer, start=Events.STARTED, resume=Events.ITERATION_STARTED,
+                pause=Events.ITERATION_COMPLETED, step=Events.ITERATION_COMPLETED)
 
     def validation_step(engine, batch):
         model.eval()
@@ -65,19 +71,21 @@ def main(args):
     def log_training_loss(trainer):
         print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] \
             LR{lr_scheduler.get_last_lr()} \
-            Loss: {trainer.state.output:.2f}")
+            Loss: {trainer.state.output:.2f} \
+            Time: {timer.value():.2f}s")
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_validation_results(trainer):
-        meanAP.reset()
         evaluator.run(valid_iterator)
         meanAP_metrics = meanAP.compute()
         print(f"Validation Results - Epoch[{trainer.state.epoch}]  \
             meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
+        print("\tMetrics:" + ",".join([f"{k}: ({v})" for k, v in meanAP_metrics.items()])) 
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
         print(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
         lr_scheduler.step()
+        meanAP.reset()
 
     trainer.run(train_iterator, max_epochs=10)
 
