@@ -20,8 +20,8 @@ def save_checkpoint(model, optimizer, metrics, path):
 def main(args):
     model, transforms = init_model(args)
     img_dir = os.path.join(args.data_dir,'resized_images/')
-    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.csv'), img_dir, transform=transforms)
-    val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.csv'), img_dir, transform=transforms)
+    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.json'), img_dir, transform=transforms)
+    val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.json'), img_dir, transform=transforms)
 
     train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size)
     valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size)
@@ -38,10 +38,10 @@ def main(args):
         model.train()
         images, targets = batch
         images = images.to(device)
-        targets = {k: v.to(device) for k,v in targets.items() if k != 'img_paths'}
+        targets = {k: v.to(device) for k,v in targets.items() if k != 'img_keys'}
         images = list(image for image in images)
-        labels = list(label.unsqueeze(0) for label in targets['labels'])
-        boxes = [box.unsqueeze(0) for box in  targets['boxes']]
+        labels = list(label for label in targets['labels'])
+        boxes = [box for box in  targets['boxes']]
         targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
 
         optimizer.zero_grad()
@@ -58,8 +58,8 @@ def main(args):
         model.eval()
         with torch.no_grad():
             images, targets = batch
-            labels = list(label.unsqueeze(0) for label in targets['labels'])
-            boxes = [box.unsqueeze(0) for box in  targets['boxes']]
+            labels = list(label for label in targets['labels'])
+            boxes = [box for box in  targets['boxes']]
             targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
             images = images.to(device)
             images = list(image for image in images)
