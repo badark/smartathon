@@ -32,7 +32,7 @@ def init_model(args):
 def init_optimizer(model, args):
     optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate,
                                 momentum=0.9, weight_decay=0.0005)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
     return optimizer, lr_scheduler
 
 def csv_to_dict(csv_data):
@@ -41,3 +41,6 @@ def csv_to_dict(csv_data):
     for index, row in csv_data.iterrows():
         dictData[row['image_path']].append(row.to_dict())
     return dictData
+
+def collate_fn(batch):
+    return tuple(zip(*batch))

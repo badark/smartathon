@@ -7,7 +7,7 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from argparse import ArgumentParser
 
 from dataset import SmartathonImageDataset
-from utils import init_model, init_optimizer
+from utils import init_model, init_optimizer, collate_fn
 
 
 def save_checkpoint(model, optimizer, metrics, path):
@@ -23,8 +23,8 @@ def main(args):
     train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.json'), img_dir, transform=transforms)
     val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.json'), img_dir, transform=transforms)
 
-    train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size)
-    valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size)
+    train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size, collate_fn=collate_fn)
+    valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size, collate_fn=collate_fn)
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     optimizer, lr_scheduler = init_optimizer(model, args)
@@ -37,19 +37,14 @@ def main(args):
     def train_step(engine, batch):
         model.train()
         images, targets = batch
-        images = images.to(device)
-        targets = {k: v.to(device) for k,v in targets.items() if k != 'img_keys'}
-        images = list(image for image in images)
-        labels = list(label for label in targets['labels'])
-        boxes = [box for box in  targets['boxes']]
-        targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
-
+        images = list(image.to(device) for image in images)
+        targets = [{k: v.to(device) for k, v in t.items() if k != 'img_keys'} for t in targets]
         optimizer.zero_grad()
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
         losses.backward()
         optimizer.step()
-        lr_scheduler.step()
+        # lr_scheduler.step()
         return losses.item()
 
     trainer = Engine(train_step)
@@ -58,11 +53,8 @@ def main(args):
         model.eval()
         with torch.no_grad():
             images, targets = batch
-            labels = list(label for label in targets['labels'])
-            boxes = [box for box in  targets['boxes']]
-            targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
-            images = images.to(device)
-            images = list(image for image in images)
+            images = list(image.to(device) for image in images)
+            targets = [{k: v.to(cpu_device) for k, v in t.items() if k != 'img_keys'} for t in targets]
             outputs = model(images)
             outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
             meanAP.update(outputs, targets)
@@ -85,6 +77,7 @@ def main(args):
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
         print(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
+        lr_scheduler.step()
 
     trainer.run(train_iterator, max_epochs=10)
 

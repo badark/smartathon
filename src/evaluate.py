@@ -33,12 +33,8 @@ def main(args):
     for batch in test_iterator:
         with torch.no_grad():
             images, targets = batch
-            img_paths = targets['img_paths']
-            labels = list(label.unsqueeze(0) for label in targets['labels'])
-            boxes = [box.unsqueeze(0) for box in  targets['boxes']]
-            targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
-            images = images.to(device)
-            images = list(image for image in images)
+            images = list(image.to(device) for image in images)
+            targets = [{k: v.to(device) for k, v in t.items() if k != 'img_keys'} for t in targets]
             # - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
             # ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
             # - labels (``Int64Tensor[N]``): the predicted labels for each detection
