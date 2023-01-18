@@ -1,5 +1,7 @@
+import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights
+from collections import defaultdict
 
 
 def init_model(args):
@@ -26,3 +28,16 @@ def init_model(args):
         raise NotImplementedError(f"model type not recognized {model_type}")
 
     return model, transforms
+
+def init_optimizer(model, args):
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate,
+                                momentum=0.9, weight_decay=0.0005)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
+    return optimizer, lr_scheduler
+
+def csv_to_dict(csv_data):
+    dictData = defaultdict(list)
+    #index through each of the items in the csv file and add to the dictionary 
+    for index, row in csv_data.iterrows():
+        dictData[row['image_path']].append(row.to_dict())
+    return dictData

@@ -7,7 +7,7 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from argparse import ArgumentParser
 
 from dataset import SmartathonImageDataset
-from model import init_model
+from utils import init_model
 
 def load_checkpoint(checkpoint_file, model):
     checkpoint = torch.load(checkpoint_file)

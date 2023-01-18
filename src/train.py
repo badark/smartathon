@@ -7,7 +7,7 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from argparse import ArgumentParser
 
 from dataset import SmartathonImageDataset
-from model import init_model
+from utils import init_model, init_optimizer
 
 
 def save_checkpoint(model, optimizer, metrics, path):
@@ -26,8 +26,8 @@ def main(args):
     train_iterator = data.DataLoader(train_data, shuffle=True, batch_size=args.batch_size)
     valid_iterator = data.DataLoader(val_data, batch_size=args.valid_batch_size)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    optimizer, lr_scheduler = init_optimizer(model, args)
     meanAP = MeanAveragePrecision(iou_type="bbox")
 
     cpu_device = torch.device('cpu')
@@ -44,10 +44,9 @@ def main(args):
         boxes = [box.unsqueeze(0) for box in  targets['boxes']]
         targets = [dict(labels=label, boxes=box) for label, box in zip(labels, boxes)]
 
+        optimizer.zero_grad()
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
-
-        optimizer.zero_grad()
         losses.backward()
         optimizer.step()
         lr_scheduler.step()
@@ -72,7 +71,9 @@ def main(args):
 
     @trainer.on(Events.ITERATION_COMPLETED(every=100))
     def log_training_loss(trainer):
-        print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] Loss: {trainer.state.output:.2f}")
+        print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] \
+            LR{lr_scheduler.get_last_lr()} \
+            Loss: {trainer.state.output:.2f}")
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_validation_results(trainer):
