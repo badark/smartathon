@@ -47,7 +47,7 @@ def main(args):
         losses = sum(loss for loss in loss_dict.values())
         losses.backward()
         optimizer.step()
-        # lr_scheduler.step()
+        lr_scheduler.step()
         return losses.item()
 
     trainer = Engine(train_step)
@@ -70,7 +70,7 @@ def main(args):
     @trainer.on(Events.ITERATION_COMPLETED(every=100))
     def log_training_loss(trainer):
         print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] \
-            LR{lr_scheduler.get_last_lr()} \
+            LR{lr_scheduler.get_last_lr():.5f} \
             Loss: {trainer.state.output:.2f} \
             Time: {timer.value():.2f}s")
 
@@ -80,11 +80,10 @@ def main(args):
         meanAP_metrics = meanAP.compute()
         print(f"Validation Results - Epoch[{trainer.state.epoch}]  \
             meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
-        print("\tMetrics:" + ",".join([f"{k}: ({v})" for k, v in meanAP_metrics.items()])) 
+        print("\tMetrics:" + ",".join([f"{k}: ({v:.3f})" for k, v in meanAP_metrics.items()])) 
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
         print(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
-        lr_scheduler.step()
         meanAP.reset()
 
     trainer.run(train_iterator, max_epochs=10)

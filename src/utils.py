@@ -14,15 +14,6 @@ def init_model(args):
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         # replace the pre-trained head with a new one
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-        # # freeze the entire model
-        # for parameter in model.parameters():
-        #     parameter.requires_grad = False
-
-        # # unfreeze the predictor
-        # for parameter in model.roi_heads.box_predictor.parameters():
-        #     parameter.requires_grad = True
-
         transforms = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()
     else:
         raise NotImplementedError(f"model type not recognized {model_type}")
