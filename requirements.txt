@@ -3,5 +3,5 @@ pytorch-ignite
 torchmetrics
 pandas
 pillow
-cv2
+opencv-python
 IPython

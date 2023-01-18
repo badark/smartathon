@@ -70,7 +70,7 @@ def main(args):
     @trainer.on(Events.ITERATION_COMPLETED(every=100))
     def log_training_loss(trainer):
         print(f"Epoch[{trainer.state.epoch}] Iteration[{trainer.state.iteration}] \
-            LR{lr_scheduler.get_last_lr():.5f} \
+            LR{lr_scheduler.get_last_lr():.3f} \
             Loss: {trainer.state.output:.2f} \
             Time: {timer.value():.2f}s")
 
