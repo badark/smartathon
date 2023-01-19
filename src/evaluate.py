@@ -31,37 +31,33 @@ def main(args):
 
     meanAP = MeanAveragePrecision(iou_type="bbox")
 
-    cpu_device = torch.device('cpu')
     device = torch.device('cuda')
     model.to(device)
     model.eval()
 
-    header = ['labels','image_path', 'xmax','xmin','ymax','ymin', 'scores']
+    header = ",".join(['class','image_path', 'name', 'xmax','xmin','ymax','ymin','scores'])
     out_csv_list = []
-
     for batch in test_iterator:
         with torch.no_grad():
             images, targets = batch
             images = list(image.to(device) for image in images)
             img_keys = [t['img_keys'] for t in targets]
-            targets = [{k: v.to(device) for k, v in t.items() if k != 'img_keys'} for t in targets]
+            targets = [{k: v for k, v in t.items() if k != 'img_keys'} for t in targets]
             # - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
             # ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
             # - labels (``Int64Tensor[N]``): the predicted labels for each detection
             # - scores (``Tensor[N]``): the scores of each detection
             outputs = model(images)
-            outputs = [{k: v for k, v in t.items()} for t in outputs]
+            outputs = [{k: v.cpu() for k, v in t.items()} for t in outputs]
             meanAP.update(outputs, targets)
-            print(img_keys)
-            out_csv_list.append(dict_to_string(img_keys,outputs))
+            out_csv_list.extend(dict_to_string(img_keys,outputs))
 
-        
     meanAP_metrics = meanAP.compute()
     print(f"Test Results - meanAP: {meanAP_metrics['map']:.2f}")
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
-    write_string_csv(out_csv_list,header,'outFile.csv')
+    write_string_csv(out_csv_list,header, os.path.join(args.output_prefix, 'outFile.csv'))
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
@@ -76,4 +72,5 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output_prefix', dest='output_prefix',
         help="output path for model predictions")
     args = parser.parse_args()
+    os.makedirs(args.output_prefix, exist_ok = True) 
     main(args)
