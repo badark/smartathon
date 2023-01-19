@@ -8,7 +8,7 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from argparse import ArgumentParser
 
 from dataset import SmartathonImageDataset
-from utils import init_model, init_optimizer, collate_fn, dict_to_string, write_string_csv
+from utils import init_model, collate_fn, dict_to_string, write_string_csv
 
 def load_checkpoint(checkpoint_file, model):
     checkpoint = torch.load(checkpoint_file)
@@ -57,7 +57,7 @@ def main(args):
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
-    write_string_csv(out_csv_list,header, os.path.join(args.output_prefix, 'outFile.csv'))
+    write_string_csv(out_csv_list,header, os.path.join(args.output_prefix, 'submission.csv'))
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')

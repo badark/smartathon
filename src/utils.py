@@ -38,12 +38,20 @@ def init_optimizer(model, args):
             weight_decay=0.0005)
     else:
         raise NotImplementedError(f"optimizer type not recognized {optim_type}")
-        
-    warmup_factor = 1.0 / 1000
-    warmup_iters = 1000
-    lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, 
-        start_factor=warmup_factor, 
-        total_iters=warmup_iters)
+    
+    lr_schedule_type = args.lr_schedule_type
+    if lr_schedule_type == 'linear':
+        warmup_factor = 1.0 / 1000
+        warmup_iters = 1000
+        lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, 
+            start_factor=warmup_factor, 
+            total_iters=warmup_iters)
+    elif lr_schedule_type == 'one_cycle':
+        lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer,
+            max_lr=args.learning_rate, total_steps=30000)
+        pass
+    else:
+        raise NotImplementedError(f"lr scheduler type not recognized {lr_schedule_type}")
     return optimizer, lr_scheduler
 
 def csv_to_dict(csv_data):

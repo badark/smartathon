@@ -3,3 +3,5 @@
 *.pt
 *.zip
 *.txt
+test/outFile.csv
+docs/~$central_experiments.xlsx
