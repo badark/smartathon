@@ -40,17 +40,11 @@ def calc_centroid(xMin, xMax, yMin, yMax):
 
 if __name__ == '__main__':
     # Pointing out a wrong IoU implementation in https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
-<<<<<<< Updated upstream
-    boxTruth = [1202, 123, 1650, 868]
-    boxPrediction = [1,1,1,1]
-=======
     #x max, x min, ymax, ymin
     # this code: xmin, y min, xmax, ymax
     boxA = [701, 211, 797, 262]
     boxB = [700, 215, 800, 250]
->>>>>>> Stashed changes
 
-    correct = get_iou(boxTruth, boxPrediction)
 
 # Load CSV - ground truth and model output
 
@@ -97,9 +91,5 @@ for key in dict_data.keys():
 # for extra, label as "bad"; for fewer label 'recall'
     
 
-<<<<<<< Updated upstream
-    print('Correct solution - also analytical: {}\n'
-=======
 print('Correct solution - also analytical: {0}\n'
->>>>>>> Stashed changes
           .format(correct))
