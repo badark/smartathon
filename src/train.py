@@ -96,6 +96,8 @@ if __name__ == "__main__":
         help='type of model to train, see utils.py for supported model types')
     parser.add_argument('-op', '--optim_type', dest='optim_type', default="sgd",
         help='type of optimizer for training, see utils.py for supported optimizer types')
+    parser.add_argument('-s', '--sched_type', dest='lr_schedule_type', default="linear",
+        help='type of scheduler for training, see utils.py for supported scheduler types')
     parser.add_argument('-d', '--data_dir', dest='data_dir', 
         help='root directory of the dataset')
     parser.add_argument('-b', '--batch_size', dest='batch_size', default=8, type=int,
