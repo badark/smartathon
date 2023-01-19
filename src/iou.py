@@ -61,14 +61,18 @@ result_dict_data = csv_to_dict(csv_data=csv_data)
 # Pair n boxes to k boxes, calculate centroid of each box and measure distance, closest ones to each other will be paired
 for key in dict_data.keys():
     ground_truth_bb = []
+    ground_truth_centroids = []
     model_output_bb = []
+    model_output_centroids = []
     problematic_bb = []
+    iou_table = [[0.0] * len(dict_data.keys[key])-1] * len(result_dict_data[key])
+
 
     for label_dict in dict_data[key]:
         #ground truth boxes
         xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]     
         ground_truth_bb.append([xmin, ymin, xmax, ymax])
-        print(xmax, xmin, ymax, ymin)
+        #print(xmax, xmin, ymax, ymin)
 
     
     for label_dict in result_dict_data[key]:
@@ -79,11 +83,27 @@ for key in dict_data.keys():
 
     #match model box to ground truth box
     #calculate IOU, if IOU is less than 0.5, then add the bb to problematic_bb
-    for bb_ground_truth in ground_truth_bb:
-        for bb_model in model_output_bb:
-                #for the same key, for each bb in ground truth 
-                if(bb_intersection_over_union(bb_ground_truth, bb_model) < 0.5):
-                    problematic_bb.append([xmin, ymin, xmax, ymax])
+    for i, bb_ground_truth in enumerate(ground_truth_bb):
+        for j, bb_model in enumerate(model_output_bb):
+            iou_table[i][j] = bb_intersection_over_union(bb_ground_truth, model_output_bb)
+    
+  
+    # grab the max IOU in the table
+    max(iou_table)
+
+    # pair - i.e. ground truth box U and predicted box V; delete row U and column V and do the operation again
+    # everytime a pairing is done, fill the column with 0's
+    
+
+
+
+               #for the remaining list items, if the model output list has too many bb's, then flag the bounding box and add to problematic bb along with the image id
+                #for the remaining list items, if the model output list has too few bb's, then flag the bounding box from the train set that is not associated with a bounding box and append to problematic bb along with image id
+
+
+                #model_output_centroids.append(calc_centroid(bb_model[0]))
+                # if(bb_intersection_over_union(bb_ground_truth, bb_model) < 0.5):
+                #     problematic_bb.append([xmin, ymin, xmax, ymax])
     break
 
 
