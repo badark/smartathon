@@ -72,13 +72,18 @@ for key in dict_data.keys():
 
     
     for label_dict in result_dict_data[key]:
-        #ground truth boxes
+        #model result boxes
         xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]     
         model_output_bb.append([xmin, ymin, xmax, ymax])
-        print(xmax, xmin, ymax, ymin)
+        #print(model_output_bb)
 
     #match model box to ground truth box
-    model_output_bb.append([xmin, ymin, xmax, ymax])
+    #calculate IOU, if IOU is less than 0.5, then add the bb to problematic_bb
+    for bb_ground_truth in ground_truth_bb:
+        for bb_model in model_output_bb:
+                #for the same key, for each bb in ground truth 
+                if(bb_intersection_over_union(bb_ground_truth, bb_model) < 0.5):
+                    problematic_bb.append([xmin, ymin, xmax, ymax])
     break
 
 
@@ -89,7 +94,3 @@ for key in dict_data.keys():
 #calc_centroid()
 
 # for extra, label as "bad"; for fewer label 'recall'
-    
-
-print('Correct solution - also analytical: {0}\n'
-          .format(correct))
