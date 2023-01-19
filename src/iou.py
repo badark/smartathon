@@ -1,7 +1,7 @@
 
 from utils import csv_to_dict
 import pandas as pd
-
+import numpy as np
 
 def bb_intersection_over_union(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
@@ -39,7 +39,6 @@ def calc_centroid(xMin, xMax, yMin, yMax):
 
 
 if __name__ == '__main__':
-    # Pointing out a wrong IoU implementation in https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
     #x max, x min, ymax, ymin
     # this code: xmin, y min, xmax, ymax
     boxA = [701, 211, 797, 262]
@@ -65,8 +64,6 @@ for key in dict_data.keys():
     model_output_bb = []
     model_output_centroids = []
     problematic_bb = []
-    iou_table = [[0.0] * len(dict_data.keys[key])-1] * len(result_dict_data[key])
-
 
     for label_dict in dict_data[key]:
         #ground truth boxes
@@ -81,29 +78,33 @@ for key in dict_data.keys():
         model_output_bb.append([xmin, ymin, xmax, ymax])
         #print(model_output_bb)
 
-    #match model box to ground truth box
-    #calculate IOU, if IOU is less than 0.5, then add the bb to problematic_bb
+    num_gt_bbox = len(ground_truth_bb)
+    num_mo_bbox = len(model_output_bb)
+    iou_table = np.zeros((num_gt_bbox, num_mo_bbox))
+
     for i, bb_ground_truth in enumerate(ground_truth_bb):
         for j, bb_model in enumerate(model_output_bb):
-            iou_table[i][j] = bb_intersection_over_union(bb_ground_truth, model_output_bb)
+            iou_table[i,j] = bb_intersection_over_union(bb_ground_truth, model_output_bb)
     
-  
-    # grab the max IOU in the table
-    max(iou_table)
-
-    # pair - i.e. ground truth box U and predicted box V; delete row U and column V and do the operation again
-    # everytime a pairing is done, fill the column with 0's
+    # algorithm to pair the model output bboxes to ground truth bboxes
+    # while we have an unassigned gt bbox or there are no more mo bboxes
+    #   let u,v be the location of the maximum value in iou_table
+    #   create the gt-mo pair (u,v)
+    #   zero out the u-th row of iou_table and the v-th column of iou_table
+    paired_bbs = [] # ~ a list of tuples of paired bounding boxes
+    gt_bb_inds = np.ones(num_gt_bbox)
+    mo_bb_inds = np.ones(num_mo_bbox)
+    while np.sum(gt_bb_inds) and np.sum(mo_bb_inds):
+        u, v = np.unravel_index(iou_table.argmax(), iou_table.shape)
+        gt_bb_inds[u] = 0
+        mo_bb_inds[v] = 0
+        iou_table[u,:] = 0.0
+        iou_table[:,v] = 0.0
+        paired_bbs.append((u,v))
     
 
 
 
-               #for the remaining list items, if the model output list has too many bb's, then flag the bounding box and add to problematic bb along with the image id
-                #for the remaining list items, if the model output list has too few bb's, then flag the bounding box from the train set that is not associated with a bounding box and append to problematic bb along with image id
-
-
-                #model_output_centroids.append(calc_centroid(bb_model[0]))
-                # if(bb_intersection_over_union(bb_ground_truth, bb_model) < 0.5):
-                #     problematic_bb.append([xmin, ymin, xmax, ymax])
     break
 
 
