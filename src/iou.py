@@ -62,6 +62,7 @@ result_dict_data = csv_to_dict(csv_data=csv_data)
 
 # Pair n boxes to k boxes, calculate centroid of each box and measure distance, closest ones to each other will be paired
 images_to_print = defaultdict(list)
+groundTruth_mage = defaultdict(list)
 
 for key in dict_data.keys():
     ground_truth_bb = []
@@ -132,14 +133,20 @@ for key in dict_data.keys():
         paired_bbs.append((u,v))
         #Need to capture the ground truth image once
         images_to_print[key].append(result_dict_data.get(key)[v])
+        groundTruth_mage[key].append(dict_data.get(key)[u])
         
     #print("problematic_bb", problematic_bb)
     #print(paired_bbs)
 
 
-df = pd.DataFrame.from_dict(images_to_print)
-print(df.to_string())
-show_images(images_to_print) #test to show images from results we will need to move this to the right spot
+print(groundTruth_mage)
+#df = pd.DataFrame.from_dict(groundTruth_mage)
+#print(df.to_string())
+
+#df = pd.DataFrame.from_dict(images_to_print)
+#print(df.to_string())
+print(images_to_print)
+show_images(groundTruth_mage,images_to_print) #test to show images from results we will need to move this to the right spot
 #calculate centroid given 2 coordinates
 #(x min + xmax)/2; (ymin+ymax)/2
 

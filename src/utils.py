@@ -118,7 +118,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None, Inverted=F
   cv2.putText(img, label, (c1[0], c1[1] + t_size[1]), 0, tl / 4, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA,)
 
 
-def show_images(final_dict_data):
+def show_images(ground_truth_dict, final_dict_data):
     #pass in dictionary of images to show
     imagePath= '../data/resized_images/'
     show_dict = final_dict_data
@@ -127,6 +127,8 @@ def show_images(final_dict_data):
         
         all_coords = []
         labels_img = []
+        ground_all_coords = []
+        ground_label_img = []
 
         for label_dict in show_dict[key]:
             #ground truth boxes
@@ -136,12 +138,22 @@ def show_images(final_dict_data):
             labels_img.append([label_img])
             #print(xmax, xmin, ymax, ymin)
 
+        for label_dict in ground_truth_dict[key]:
+            #ground truth boxes
+            xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]     
+            ground_all_coords.append([xmin, ymin, xmax, ymax])
+            label_img = [label_dict.get(key) for key in ['name']]
+            ground_label_img.append([label_img])
+            #print(xmax, xmin, ymax, ymin)
+
         img = cv2.imread(os.path.join(imagePath, key))
 
         for item, coord in enumerate(all_coords):
-            print(item)
-            print(labels_img[item][0][0])
+            #print(item)
+            #print(labels_img[item][0][0])
             plot_one_box(coord,img, color=(0, 255, 0), label=labels_img[item][0][0], line_thickness=2)
+            plot_one_box(ground_all_coords[item],img, color=(255, 0, 0), label=ground_label_img[item][0][0], line_thickness=2)
+
         im_pil = Image.fromarray(img)
 
         #add in code to process ground truth image
