@@ -21,8 +21,12 @@ class SmartathonImageDataset(torch.utils.data.Dataset):
         img_labels = self.img_labels[img_key]
         img_path = os.path.join(self.img_dir, img_key)
         image = Image.open(img_path)
-        # class 0 is reserved for background according to the docs
-        label = [int(label_dict['class'])+1 for label_dict in img_labels]
+        # class 0 is reserved for background according to the docs, we have to modify to deal with removing BAD_STREETLIGHT
+        label = [int(label_dict['class']) for label_dict in img_labels]
+        for i,l in enumerate(label):
+          if l < 6:
+            label[i]+=1
+
         # extract the bounding box coordinates
         boxes = list()
         areas = list()

@@ -72,7 +72,12 @@ def dict_to_string(img_keys, output_data):
     for i, img_key in enumerate(img_keys):
         data_dict = output_data[i]
         boxes = data_dict.get('boxes').numpy() # stored as xmin, ymin, xmax, ymax - remember to reorder
-        cls_inds = data_dict.get('labels').numpy() - 1 # offset by one to remove the background class
+        cls_inds = data_dict.get('labels').numpy() 
+        # offset by one to remove the background class for the cls_inds < 6 (Deal with BAD_STREETLIGHT case)
+        for i, c in enumerate(cls_inds):
+            if c <= 6:
+                cls_inds[i] -=1
+            
         scores = data_dict.get('scores').numpy()
         names = [CLASS_MAPPING[ind] for ind in cls_inds]
 
