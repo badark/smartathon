@@ -58,7 +58,7 @@ def main(args):
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
-    write_string_csv(out_csv_list,header, os.path.join(args.output_prefix, 'submission.csv'))
+    write_string_csv(out_csv_list,header, os.path.join(args.output_prefix, 'evaluation.csv'))
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
