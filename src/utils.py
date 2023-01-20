@@ -2,6 +2,10 @@ import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights, FasterRCNN_ResNet50_FPN_V2_Weights
 from collections import defaultdict
+from IPython.display import display
+import cv2
+import os
+from PIL import Image
 
 CLASS_MAPPING=["GRAFFITI", "FADED_SIGNAGE", "POTHOLES", "GARBAGE", "CONSTRUCTION_ROAD", 
 "BROKEN_SIGNAGE", "BAD_BILLBOARD", "SAND_ON_ROAD", "CLUTTER_SIDEWALK", "UNKEPT_FACADE"]
@@ -92,3 +96,58 @@ def write_string_csv(string_list, header, filename):
     data_string = '\n'.join([header]+string_list)
     with open(filename, 'w') as f:
         f.write(data_string)
+
+def plot_one_box(x, img, color=None, label=None, line_thickness=None, Inverted=False):
+
+  #since the images are resized resize the bounding boxes coordinates
+  x = list(map(lambda x: x/2, x))
+
+  # Plots one bounding box on image img
+  tl = line_thickness or 2 # line thickness
+  c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
+  cv2.rectangle(img, c1, c2, color, thickness=tl)
+  if label:
+    tf = 1 # font thickness
+    t_size = cv2.getTextSize(label, 0, fontScale=tl / 4, thickness=1)[0]
+  if Inverted == True:
+    c1 = c2
+    c2 = c1[0] + t_size[0], c1[1] + t_size[1] + 3
+  else:
+    c2 = c1[0] + t_size[0], c1[1] + t_size[1] + 3
+  cv2.rectangle(img, c1, c2, color, -1) # filled
+  cv2.putText(img, label, (c1[0], c1[1] + t_size[1]), 0, tl / 4, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA,)
+
+
+def show_images(final_dict_data):
+    #pass in dictionary of images to show
+    imagePath= '../data/resized_images/'
+    show_dict = final_dict_data
+
+    for key in show_dict.keys():
+        
+        all_coords = []
+        labels_img = []
+
+        for label_dict in show_dict[key]:
+            #ground truth boxes
+            xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]     
+            all_coords.append([xmin, ymin, xmax, ymax])
+            label_img = [label_dict.get(key) for key in ['name']]
+            labels_img.append([label_img])
+            #print(xmax, xmin, ymax, ymin)
+
+        img = cv2.imread(os.path.join(imagePath, key))
+
+        for item, coord in enumerate(all_coords):
+            print(item)
+            print(labels_img[item][0][0])
+            plot_one_box(coord,img, color=(0, 255, 0), label=labels_img[item][0][0], line_thickness=2)
+        im_pil = Image.fromarray(img)
+
+        #add in code to process ground truth image
+
+        #put the two images side-by-side
+        #Image.fromarray(np.hstack((np.array(im_pil),np.array(im_pil)))).show()
+
+        #show single image
+        im_pil.show()
