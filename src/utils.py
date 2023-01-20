@@ -18,14 +18,14 @@ def init_model(args):
     model_type = args.model_type
     if model_type == 'resnet50':
         # load a model pre-trained on COCO
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT", box_detections_per_img=5)
         # get number of input features for the classifier
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         # replace the pre-trained head with a new one
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         transforms = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()
     elif model_type == 'resnet50_v2':
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(weights="DEFAULT")
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(weights="DEFAULT", box_detections_per_img=5)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         transforms = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT.transforms()
