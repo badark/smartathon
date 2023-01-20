@@ -12,8 +12,6 @@ from utils import init_model, init_optimizer, collate_fn
 
 import logging
 
-best_valid_meanAP = -1
-best_ckpt = ''
 
 def save_checkpoint(model, optimizer, metrics, path):
     checkpoint_dict = {'model_state_dict': model.state_dict(),
@@ -90,16 +88,9 @@ def main(args):
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
         logging.info(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
-
-        if meanAP_score > best_valid_meanAP:
-            best_valid_meanAP = meanAP_score
-            best_ckpt = chkpt_path
-
         meanAP.reset()
 
     trainer.run(train_iterator, max_epochs=10)
-
-    logging.info(f"Best validation meanAP {best_valid_meanAP:.3f} with {best_ckpt}")
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
