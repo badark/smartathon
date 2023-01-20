@@ -94,6 +94,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
     parser.add_argument('-m', '--model_type', dest='model_type', default="resnet50",
         help='type of model to train, see utils.py for supported model types')
+    parser.add_argument('--old_classes', dest='old_classes', default=False, action='store_true',
+        help="to run with the old number of classes")
     parser.add_argument('-op', '--optim_type', dest='optim_type', default="sgd",
         help='type of optimizer for training, see utils.py for supported optimizer types')
     parser.add_argument('-s', '--sched_type', dest='lr_schedule_type', default="linear",

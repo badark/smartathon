@@ -4,10 +4,13 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRC
 from collections import defaultdict
 
 CLASS_MAPPING=["GRAFFITI", "FADED_SIGNAGE", "POTHOLES", "GARBAGE", "CONSTRUCTION_ROAD", 
-"BROKEN_SIGNAGE", "BAD_STREETLIGHT", "BAD_BILLBOARD", "SAND_ON_ROAD", "CLUTTER_SIDEWALK", "UNKEPT_FACADE"]
+"BROKEN_SIGNAGE", "BAD_BILLBOARD", "SAND_ON_ROAD", "CLUTTER_SIDEWALK", "UNKEPT_FACADE"]
 
 def init_model(args):
-    num_classes = 12  # 11 classes + background
+    if args.old_classes:
+        num_classes = 12
+    else:
+        num_classes = 11  # 11 classes + background
     model_type = args.model_type
     if model_type == 'resnet50':
         # load a model pre-trained on COCO

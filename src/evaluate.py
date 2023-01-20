@@ -64,6 +64,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
     parser.add_argument('-m', '--model_type', dest='model_type', 
         help='type of model to train, see model.py for supported model types')
+    parser.add_argument('--old_classes', dest='old_classes', default=False, action='store_true',
+        help="to run with the old number of classes")
     parser.add_argument('-c', '--checkpoint_file', dest='checkpoint_file',
         help='path to checkpoint file')
     parser.add_argument('-d', '--data_dir', dest='data_dir', 
