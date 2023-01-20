@@ -5,6 +5,7 @@ from collections import defaultdict
 from IPython.display import display
 import cv2
 import os
+import numpy as np
 from PIL import Image
 
 CLASS_MAPPING=["GRAFFITI", "FADED_SIGNAGE", "POTHOLES", "GARBAGE", "CONSTRUCTION_ROAD", 
@@ -77,8 +78,13 @@ def dict_to_string(img_keys, output_data):
         data_dict = output_data[i]
         boxes = data_dict.get('boxes').numpy() # stored as xmin, ymin, xmax, ymax - remember to reorder
         cls_inds = data_dict.get('labels').numpy() - 1
-            
         scores = data_dict.get('scores').numpy()
+        if len(cls_inds) == 0:
+            print(f"There are no predictions for image with key: {img_key} so inserting dummy predictions...")
+            cls_inds = np.array([0])
+            boxes = np.array([[0, 0, 1, 1]]) 
+            scores = np.array([1e-5])
+        
         names = [CLASS_MAPPING[ind] for ind in cls_inds]
 
         for cls_ind, name, box, score in zip(cls_inds, names, boxes, scores):
