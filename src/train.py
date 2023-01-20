@@ -33,7 +33,7 @@ def main(args):
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     optimizer, lr_scheduler = init_optimizer(model, args)
-    meanAP = MeanAveragePrecision(iou_type="bbox")
+    meanAP = MeanAveragePrecision(iou_type="bbox", class_metrics=True)
 
     cpu_device = torch.device('cpu')
     device = torch.device('cuda')
