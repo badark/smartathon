@@ -50,7 +50,7 @@ def main(args):
             outputs = model(images)
             outputs = [{k: v.cpu() for k, v in t.items()} for t in outputs]
             meanAP.update(outputs, targets)
-            out_csv_list.extend(dict_to_string(img_keys,outputs))
+            out_csv_list.extend(dict_to_string(img_keys, outputs))
 
     meanAP_metrics = meanAP.compute()
     print(f"Test Results - meanAP: {meanAP_metrics['map']:.2f}")
