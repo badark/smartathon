@@ -1,7 +1,8 @@
 
-from utils import csv_to_dict, show_images
+from utils import csv_to_dict, show_images, show_images_single
 import pandas as pd
 import numpy as np
+import json
 from collections import defaultdict
 
 
@@ -51,18 +52,22 @@ if __name__ == '__main__':
 # Load CSV - ground truth and model output
 
 # Process CSV file and convert to dictionary (key by image path) and will gather bounding boxes
-train_csv_path = '../data/train.csv'
-csv_data = pd.read_csv(train_csv_path)
-dict_data = csv_to_dict(csv_data=csv_data)
+train_csv_path = '../data/test_split.json'
+#csv_data = pd.read_csv(train_csv_path)
+#dict_data = csv_to_dict(csv_data=csv_data)
+with open(train_csv_path, 'r') as file:
+    dict_data = json.load(file)
 
 # Process CSV file and convert to dictionary (key by image path) and will gather bounding boxes
-result_csv_path = '../data/train_mod.csv'
+result_csv_path = '../data/evaluation.csv'
 csv_data = pd.read_csv(result_csv_path)
 result_dict_data = csv_to_dict(csv_data=csv_data)
 
 # Pair n boxes to k boxes, calculate centroid of each box and measure distance, closest ones to each other will be paired
 images_to_print = defaultdict(list)
 groundTruth_mage = defaultdict(list)
+
+#show_images_single(result_dict_data)
 
 for key in dict_data.keys():
     ground_truth_bb = []
@@ -82,7 +87,6 @@ for key in dict_data.keys():
         #model result boxes
         xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]     
         model_output_bb.append([xmin, ymin, xmax, ymax])
-        #print(model_output_bb)
 
     num_gt_bbox = len(ground_truth_bb)
     num_mo_bbox = len(model_output_bb)
@@ -102,7 +106,7 @@ for key in dict_data.keys():
     #   create the gt-mo pair (u,v)
     #   zero out the u-th row of iou_table and the v-th column of iou_table
     paired_bbs = [] # ~ a list of tuples of paired bounding boxes
-    #problematic_bb = []
+    problematic_bb = []
     gt_bb_inds = np.ones(num_gt_bbox)
     mo_bb_inds = np.ones(num_mo_bbox)
     while np.sum(gt_bb_inds) and np.sum(mo_bb_inds):
@@ -116,7 +120,7 @@ for key in dict_data.keys():
         #Then we found one that has different class names so lets just continue and not add
         #that to the list of paired_bbs
         if dict_data.get(key)[u].get('name') != result_dict_data.get(key)[v].get('name'):
-            #problematic_bb.append((u,v))
+            problematic_bb.append((u,v))
             gt_bb_inds[u] = 0
             mo_bb_inds[v] = 0
             iou_table[u,:] = 0.0
@@ -135,8 +139,8 @@ for key in dict_data.keys():
         images_to_print[key].append(result_dict_data.get(key)[v])
         groundTruth_mage[key].append(dict_data.get(key)[u])
         
-    #print("problematic_bb", problematic_bb)
-    #print(paired_bbs)
+    print("problematic_bb", problematic_bb)
+    print(paired_bbs)
 
 
 print(groundTruth_mage)
@@ -153,3 +157,5 @@ show_images(groundTruth_mage,images_to_print) #test to show images from results 
 #calc_centroid()
 
 # for extra, label as "bad"; for fewer label 'recall'
+
+
