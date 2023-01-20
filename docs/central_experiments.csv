@@ -11,7 +11,7 @@
 10,finetune-onecycle-b8,,resnet50,SGD,OneCycleLR,0.005,8,,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_1cycle_lr005_b8"" --lr 0.005 -b 8 -s one_cycle",
 11,finetune-onecycle-b4,babar,resnet50,SGD,OneCycleLR,0.005,4,0.142 @ E10,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_1cycle_lr005_b4"" --lr 0.005 -b 4 -s one_cycle",
 12,v2-baseline-b4,,resnet50_v2,SGD,LinearLR,0.005,4,,,"python src/train.py -m resnet50_v2 -d ""./data"" -o ""./model_v2_lr005_b4"" --lr 0.005 -b 4 -s linear",
-13,v2-onecycle-b4,,resnet50_v2,SGD,OneCycleLR,0.005,4,,,"python src/train.py -m resnet50_v2 -d ""./data"" -o ""./model_v2_1cycle_lr005_b4"" --lr 0.005 -b 4 -s one_cycle",
+13,v2-onecycle-b4,,resnet50_v2,SGD,OneCycleLR,0.005,4,running,,"python src/train.py -m resnet50_v2 -d ""./data"" -o ""./model_v2_1cycle_lr005_b4"" --lr 0.005 -b 4 -s one_cycle",
 14,,,,,,,,,,,
 15,,,,,,,,,,,
 16,,,,,,,,,,,
