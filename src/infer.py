@@ -39,9 +39,7 @@ def main(args):
             images, targets = batch
             images = list(image.to(device) for image in images)
             img_keys = [t['img_keys'] for t in targets]
-            if '199774ddac89791123a3851ae6a5d4ce.jpg' in img_keys:
-                print('found it')
-                break
+            
             # - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
             # ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
             # - labels (``Int64Tensor[N]``): the predicted labels for each detection
@@ -49,6 +47,11 @@ def main(args):
             outputs = model(images)
             outputs = [{k: v.cpu() for k, v in t.items()} for t in outputs]
             out_csv_list.extend(dict_to_string(img_keys, outputs))
+            if '199774ddac89791123a3851ae6a5d4ce.jpg' in img_keys:
+                print('found it')
+                print(img_keys)
+                print(outputs)
+                break
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
