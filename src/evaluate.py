@@ -29,7 +29,7 @@ def main(args):
     test_iterator = data.DataLoader(test_data, batch_size=args.batch_size, collate_fn=collate_fn)
 
 
-    meanAP = MeanAveragePrecision(iou_type="bbox")
+    meanAP = MeanAveragePrecision(iou_type="bbox", class_metrics=True)
 
     device = torch.device('cuda')
     model.to(device)
@@ -54,6 +54,7 @@ def main(args):
 
     meanAP_metrics = meanAP.compute()
     print(f"Test Results - meanAP: {meanAP_metrics['map']:.2f}")
+    print("\tMetrics:" + ",".join([f"{k}: ({v:.3f})" for k, v in meanAP_metrics.items()]))
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 

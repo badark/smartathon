@@ -6,7 +6,7 @@
 5,baseline- full finetune_increaseLR-b4,haidar,resnet50,SGD,LinearLR,0.01,4,0.139 @ E7,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_unfz_lr01_b4"" --lr 0.01 -b 4",
 6,baseline- full finetune_decreaseLR-b4,haidar,resnet50,SGD,LinearLR,0.001,4,0.131 @ E8,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_unfz_lr001_b4"" --lr 0.001 -b 4",
 7,baseline- full finetune-b8,babar,resnet50,SGD,LinearLR,0.005,8,0.125 @ E10,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_unfz_lr005_b8"" --lr 0.005 -b 8",
-8,baseline- full finetune_increaseLR-b8,babar,resnet50,SGD,LinearLR,0.01,8,0.15 at E8,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_unfz_lr01_b8"" --lr 0.01 -b 8",
+8,baseline- full finetune_increaseLR-b8,babar,resnet50,SGD,LinearLR,0.01,8,0.15 at E8,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_unfz_lr01_b8"" --lr 0.01 -b 8","python src/evaluate.py -m resnet50 -d ""./data"" -o ""./test_model_unfz _lr01_b8""  -c ""./test_model_unfz_lr01_b8/checkpoint_8.pt"" -b 8"
 9,baseline- full finetune_decreaseLR-b8,haidar,resnet50,SGD,LinearLR,0.001,8,running,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_unfz_lr001_b8"" --lr 0.001 -b 8",
 10,finetune-onecycle-b8,,resnet50,SGD,OneCycleLR,0.005,8,,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_1cycle_lr005_b8"" --lr 0.005 -b 8 -s one_cycle",
 11,finetune-onecycle-b4,babar,resnet50,SGD,OneCycleLR,0.005,4,0.142 @ E10,,"python src/train.py -m resnet50 -d ""./data"" -o ""./test_model_1cycle_lr005_b4"" --lr 0.005 -b 4 -s one_cycle",
