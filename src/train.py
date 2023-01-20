@@ -82,7 +82,7 @@ def main(args):
         meanAP_metrics = meanAP.compute()
         logging.info(f"Validation Results - Epoch[{trainer.state.epoch}]  \
             meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
-        logging.info("\tMetrics:" + ",".join([f"{k}: ({v:.3f})" for k, v in meanAP_metrics.items()])) 
+        logging.info("\tMetrics:" + ",".join([f"{k}: ({v})" for k, v in meanAP_metrics.items()])) 
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
         logging.info(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)

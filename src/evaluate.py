@@ -54,7 +54,7 @@ def main(args):
 
     meanAP_metrics = meanAP.compute()
     print(f"Test Results - meanAP: {meanAP_metrics['map']:.2f}")
-    print("\tMetrics:" + ",".join([f"{k}: ({v:.3f})" for k, v in meanAP_metrics.items()]))
+    print("\tMetrics:" + ",".join([f"{k}: ({v})" for k, v in meanAP_metrics.items()]))
 
     #write code to create submission file
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
