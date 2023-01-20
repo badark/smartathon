@@ -2,8 +2,7 @@
 from utils import csv_to_dict, show_images
 import pandas as pd
 import numpy as np
-
-
+from collections import defaultdict
 
 
 
@@ -61,9 +60,9 @@ result_csv_path = '../data/train_mod.csv'
 csv_data = pd.read_csv(result_csv_path)
 result_dict_data = csv_to_dict(csv_data=csv_data)
 
-#show_images(result_dict_data) #test to show images from results we will need to move this to the right spot
-
 # Pair n boxes to k boxes, calculate centroid of each box and measure distance, closest ones to each other will be paired
+images_to_print = defaultdict(list)
+
 for key in dict_data.keys():
     ground_truth_bb = []
     ground_truth_centroids = []
@@ -92,8 +91,8 @@ for key in dict_data.keys():
         for j, bb_model in enumerate(model_output_bb):
             iou_table[i,j] = bb_intersection_over_union(bb_ground_truth, bb_model)
     
-    print(ground_truth_bb)
-    print(model_output_bb)
+    #print(ground_truth_bb)
+    #print(model_output_bb)
 
     
     # algorithm to pair the model output bboxes to ground truth bboxes
@@ -102,7 +101,7 @@ for key in dict_data.keys():
     #   create the gt-mo pair (u,v)
     #   zero out the u-th row of iou_table and the v-th column of iou_table
     paired_bbs = [] # ~ a list of tuples of paired bounding boxes
-    problematic_bb = []
+    #problematic_bb = []
     gt_bb_inds = np.ones(num_gt_bbox)
     mo_bb_inds = np.ones(num_mo_bbox)
     while np.sum(gt_bb_inds) and np.sum(mo_bb_inds):
@@ -113,24 +112,34 @@ for key in dict_data.keys():
         #print(mo_bb_inds)
 
         # [u].name != [v].name?
-        # if not, add it to problematic bounding boxes
+        #Then we found one that has different class names so lets just continue and not add
+        #that to the list of paired_bbs
         if dict_data.get(key)[u].get('name') != result_dict_data.get(key)[v].get('name'):
-            problematic_bb.append((u,v))
+            #problematic_bb.append((u,v))
+            gt_bb_inds[u] = 0
+            mo_bb_inds[v] = 0
+            iou_table[u,:] = 0.0
+            iou_table[:,v] = 0.0
+            continue
 
-        #print("problematic_bb", problematic_bb)
+        
         gt_bb_inds[u] = 0
         mo_bb_inds[v] = 0
         iou_table[u,:] = 0.0
         iou_table[:,v] = 0.0
+        #print(iou_table)
+        #we might not even need to store this here as 
         paired_bbs.append((u,v))
-    
+        #Need to capture the ground truth image once
+        images_to_print[key].append(result_dict_data.get(key)[v])
+        
+    #print("problematic_bb", problematic_bb)
     #print(paired_bbs)
 
 
-    break
-
-
-
+df = pd.DataFrame.from_dict(images_to_print)
+print(df.to_string())
+show_images(images_to_print) #test to show images from results we will need to move this to the right spot
 #calculate centroid given 2 coordinates
 #(x min + xmax)/2; (ymin+ymax)/2
 
