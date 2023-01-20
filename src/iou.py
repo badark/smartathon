@@ -56,7 +56,10 @@ def show_images(final_dict_data):
         #add in code to process ground truth image
 
         #put the two images side-by-side
-        Image.fromarray(np.hstack((np.array(im_pil),np.array(im_pil)))).show()
+        #Image.fromarray(np.hstack((np.array(im_pil),np.array(im_pil)))).show()
+
+        #show single image
+        im_pil.show()
 
 
 def bb_intersection_over_union(boxA, boxB):
