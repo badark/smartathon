@@ -30,6 +30,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None, Inverted=F
 
 def show_images(final_dict_data):
     #pass in dictionary of images to show
+    imagePath= '../data/resized_images/'
     show_dict = final_dict_data
 
     for key in show_dict.keys():
@@ -45,7 +46,7 @@ def show_images(final_dict_data):
             labels_img.append([label_img])
             #print(xmax, xmin, ymax, ymin)
 
-        img = cv2.imread(os.path.join('../data/resized_images/', key))
+        img = cv2.imread(os.path.join(imagePath, key))
 
         for item, coord in enumerate(all_coords):
             print(item)
