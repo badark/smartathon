@@ -12,6 +12,8 @@ from utils import init_model, init_optimizer, collate_fn
 
 import logging
 
+best_valid_meanAP = -1
+best_ckpt = ''
 
 def save_checkpoint(model, optimizer, metrics, path):
     checkpoint_dict = {'model_state_dict': model.state_dict(),
@@ -34,8 +36,7 @@ def main(args):
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     optimizer, lr_scheduler = init_optimizer(model, args)
     meanAP = MeanAveragePrecision(iou_type="bbox", class_metrics=True)
-    best_valid_meanAP = -1
-    best_ckpt = 0
+
 
     cpu_device = torch.device('cpu')
     device = torch.device('cuda')
