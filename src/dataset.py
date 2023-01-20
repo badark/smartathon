@@ -31,10 +31,10 @@ class SmartathonImageDataset(torch.utils.data.Dataset):
       
       img_path = os.path.join(self.img_dir, img_key)
       image = Image.open(img_path)
-      if self.transform:
-        image = self.transform(image)
       
       if not  self.training:
+        if self.transform:
+          image = self.transform(image)
         return image, dict(img_keys=img_key)
       
       # class 0 is reserved for background according to the docs, we have to modify to deal with removing BAD_STREETLIGHT
@@ -63,8 +63,10 @@ class SmartathonImageDataset(torch.utils.data.Dataset):
       boxes = torch.as_tensor(boxes, dtype=torch.float32)
       areas = torch.as_tensor(areas, dtype=torch.float32)
       
+      if self.transform:
+        image = self.transform(image)
       if self.target_transform:
-          label = self.target_transform(label)
+        label = self.target_transform(label)
       label = torch.as_tensor(label, dtype=torch.int64)
       target = dict(labels=label, boxes=boxes, areas=areas, img_keys=img_key)
       return image, target
