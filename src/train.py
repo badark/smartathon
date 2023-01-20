@@ -34,6 +34,8 @@ def main(args):
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     optimizer, lr_scheduler = init_optimizer(model, args)
     meanAP = MeanAveragePrecision(iou_type="bbox", class_metrics=True)
+    best_valid_meanAP = -1
+    best_ckpt = 0
 
     cpu_device = torch.device('cpu')
     device = torch.device('cuda')
@@ -80,15 +82,23 @@ def main(args):
     def log_validation_results(trainer):
         evaluator.run(valid_iterator)
         meanAP_metrics = meanAP.compute()
+        meanAP_score = meanAP_metrics['map']
         logging.info(f"Validation Results - Epoch[{trainer.state.epoch}]  \
-            meanAP: {meanAP_metrics['map']:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
+            meanAP: {meanAP_score:.2f} - Time({trainer.state.times[Events.EPOCH_COMPLETED]:.2f}s)")
         logging.info("\tMetrics:" + ",".join([f"{k}: ({v})" for k, v in meanAP_metrics.items()])) 
         chkpt_path = os.path.join(args.output_prefix, f'checkpoint_{trainer.state.epoch}.pt')
         logging.info(f"Saving checkpoint to {chkpt_path}...")
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
+
+        if meanAP_score > best_valid_meanAP:
+            best_valid_meanAP = meanAP_score
+            best_ckpt = chkpt_path
+
         meanAP.reset()
 
     trainer.run(train_iterator, max_epochs=10)
+
+    logging.info(f"Best validation meanAP {best_valid_meanAP:.3f} with {best_ckpt}")
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
