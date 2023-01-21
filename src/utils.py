@@ -163,7 +163,7 @@ def show_images(ground_truth_dict, final_dict_data):
     imagePath= '../data/resized_images/'
     show_dict = final_dict_data
 
-    for key in show_dict.keys():
+    for key in show_dict.keys()[0:20]:
         
         all_coords = []
         labels_img = []
