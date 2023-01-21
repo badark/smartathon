@@ -23,7 +23,7 @@ def save_checkpoint(model, optimizer, metrics, path):
 def main(args):
     model, transforms = init_model(args)
     img_dir = os.path.join(args.data_dir,'resized_images/')
-    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.json'), img_dir, transform=transforms)
+    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.json'), img_dir, transform=transforms, horiz_flip=args.horiz_flip)
     val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.json'), img_dir, transform=transforms)
 
     train_iterator = data.DataLoader(train_data, shuffle=True, 
@@ -91,7 +91,7 @@ def main(args):
         meanAP.reset()
 
 
-    trainer.run(train_iterator, max_epochs=10)
+    trainer.run(train_iterator, max_epochs=15)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
@@ -99,6 +99,8 @@ if __name__ == "__main__":
         help='type of model to train, see utils.py for supported model types')
     parser.add_argument('--old_classes', dest='old_classes', default=False, action='store_true',
         help="to run with the old number of classes")
+    parser.add_argument('--horiz_flip', dest='horiz_flip', default=False, action='store_true',
+        help="to randomly flip images horizontally during training")
     parser.add_argument('-op', '--optim_type', dest='optim_type', default="sgd",
         help='type of optimizer for training, see utils.py for supported optimizer types')
     parser.add_argument('-s', '--sched_type', dest='lr_schedule_type', default="linear",
@@ -113,6 +115,8 @@ if __name__ == "__main__":
         help="output path for model checkpoints")
     parser.add_argument('--lr', dest='learning_rate', type=float, default=1e-5,
         help="learning rate for optimizer")
+    parser.add_argument('--wd', dest='weight_decay', type=float, default=0.0005,
+        help="sets the weight decay for optimizer")
     args = parser.parse_args()
     os.makedirs(args.output_prefix, exist_ok = True) 
     logging.basicConfig(filename=os.path.join(args.output_prefix, 'log.txt'),level=logging.INFO)

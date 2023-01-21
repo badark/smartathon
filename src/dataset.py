@@ -1,12 +1,27 @@
 import os
+from typing import Dict, Optional, Tuple
+import torch
+from torch import nn, Tensor
+from torchvision.transforms import functional as F, transforms as T
 import pandas as pd
 from PIL import Image
-import torch
 import json
 
+class RandomHorizontalFlip(T.RandomHorizontalFlip):
+    def forward(
+        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
+    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        if torch.rand(1) < self.p:
+            image = F.hflip(image)
+            if target is not None:
+                _, _, width = F.get_dimensions(image)
+                target["boxes"][:, [0, 2]] = width - target["boxes"][:, [2, 0]]
+        return image, target
+
 class SmartathonImageDataset(torch.utils.data.Dataset):
-    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None, training=True):
+    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None, training=True, horiz_flip=False):
       self.training = training
+      self.horiz_flip = horiz_flip
       if self.training:
         self.img_labels = dict(json.load(open(annotations_file, 'r')))
         self.img_keys = list(self.img_labels.keys())
@@ -15,6 +30,9 @@ class SmartathonImageDataset(torch.utils.data.Dataset):
       self.img_dir = img_dir
       self.transform = transform
       self.target_transform = target_transform
+      self.image_target_transform = None
+      if self.horiz_flip:
+        self.image_target_transform = RandomHorizontalFlip(0.5)
 
     def __len__(self):
       if self.training:
@@ -69,4 +87,6 @@ class SmartathonImageDataset(torch.utils.data.Dataset):
         label = self.target_transform(label)
       label = torch.as_tensor(label, dtype=torch.int64)
       target = dict(labels=label, boxes=boxes, areas=areas, img_keys=img_key)
+      if self.image_target_transform:
+        image, target = self.image_target_transform(image, target)
       return image, target

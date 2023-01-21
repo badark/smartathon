@@ -40,13 +40,13 @@ def init_optimizer(model, args):
     params = [p for p in model.parameters() if p.requires_grad]
     if optim_type == "sgd":
         optimizer = torch.optim.SGD(params, lr=args.learning_rate,
-            momentum=0.9, weight_decay=0.0005)
+            momentum=0.9, weight_decay=args.weight_decay)
     elif optim_type == "adam":
         optimizer = torch.optim.Adam(params, lr=args.learning_rate,
-            weight_decay=0.0005)
+            weight_decay=args.weight_decay)
     elif optim_type == "partitioned":
-        optimizer = torch.optim.Adam({'params': model.backbone.parameters(), 'lr': args.learning_rate/10},
-            {'params': model.roi_heads.parameters(), 'lr': args.learning_rate}, weight_decay=0.0005)
+        optimizer = torch.optim.Adam([{'params': model.backbone.parameters(), 'lr': args.learning_rate/10},
+            {'params': model.roi_heads.parameters(), 'lr': args.learning_rate}], weight_decay=args.weight_decay)
     else:
         raise NotImplementedError(f"optimizer type not recognized {optim_type}")
     
