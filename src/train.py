@@ -23,7 +23,7 @@ def save_checkpoint(model, optimizer, metrics, path):
 def main(args):
     model, transforms = init_model(args)
     img_dir = os.path.join(args.data_dir,'resized_images/')
-    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train_split.json'), img_dir, transform=transforms, horiz_flip=args.horiz_flip)
+    train_data = SmartathonImageDataset(os.path.join(args.data_dir, 'train.json'), img_dir, transform=transforms, horiz_flip=args.horiz_flip)
     val_data = SmartathonImageDataset(os.path.join(args.data_dir, 'val_split.json'), img_dir, transform=transforms)
 
     train_iterator = data.DataLoader(train_data, shuffle=True, 
