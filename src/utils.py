@@ -163,7 +163,7 @@ def show_images(ground_truth_dict, final_dict_data):
     imagePath= '../data/resized_images/'
     show_dict = final_dict_data
 
-    for key in show_dict.keys()[0:20]:
+    for key in list(show_dict.keys())[:20]:
         
         all_coords = []
         labels_img = []
@@ -190,7 +190,7 @@ def show_images(ground_truth_dict, final_dict_data):
 
         for item, coord in enumerate(all_coords):
             plot_one_box(coord,img, color=(0, 255, 0), label=labels_img[item][0][0], line_thickness=2)
-            plot_one_box(ground_all_coords[item],img, color=(255, 0, 0), label=ground_label_img[item][0][0], line_thickness=2)
+            plot_one_box(ground_all_coords[item],img, color=(0, 0, 255), label=ground_label_img[item][0][0], line_thickness=2)
         
         def display_img(cv2_img):
             color_coverted = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
