@@ -19,14 +19,14 @@ def init_model(args):
     model_type = args.model_type
     if model_type == 'resnet50':
         # load a model pre-trained on COCO
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT", box_detections_per_img=5)
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT", box_detections_per_img=2)
         # get number of input features for the classifier
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         # replace the pre-trained head with a new one
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         transforms = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.transforms()
     elif model_type == 'resnet50_v2':
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(weights="DEFAULT", box_detections_per_img=5)
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(weights="DEFAULT", box_detections_per_img=2)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         transforms = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT.transforms()
@@ -44,6 +44,9 @@ def init_optimizer(model, args):
     elif optim_type == "adam":
         optimizer = torch.optim.Adam(params, lr=args.learning_rate,
             weight_decay=0.0005)
+    elif optim_type == "partitioned":
+        optimizer = torch.optim.Adam({'params': model.backbone.parameters(), 'lr': args.learning_rate/10},
+            {'params': model.roi_heads.parameters(), 'lr': args.learning_rate}, weight_decay=0.0005)
     else:
         raise NotImplementedError(f"optimizer type not recognized {optim_type}")
     
