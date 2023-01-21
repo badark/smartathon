@@ -60,18 +60,31 @@ def main(args):
     # format cld_ind, filename, cls_name, xmax, xmin, ymax, ymin 
     write_string_csv(out_csv_list,header, os.path.join(args.output_prefix, 'evaluation.csv'))
 
+#Input Arguments
+#-m: type of model to train, see model.py for supported model types
+#--old_classes: to run with the old number of classes
+#-c: path to checkpoint file
+#-d: root directory of the dataset
+#-b: batch size during inference
+#-o: output path for model predictions
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
-    parser.add_argument('-m', '--model_type', dest='model_type', 
+    #type of model to train, see model.py for supported model types
+    parser.add_argument('-m', '--model_type', dest='model_type',   
         help='type of model to train, see model.py for supported model types')
+    #to run with the old number of classes
     parser.add_argument('--old_classes', dest='old_classes', default=False, action='store_true',
         help="to run with the old number of classes")
+    #path to checkpoint file
     parser.add_argument('-c', '--checkpoint_file', dest='checkpoint_file',
         help='path to checkpoint file')
+    #root directory of the dataset
     parser.add_argument('-d', '--data_dir', dest='data_dir', 
         help='root directory of the dataset')
+    #batch size during inference
     parser.add_argument('-b', '--batch_size', dest='batch_size', default=8, type=int,
         help="batch size during inference")
+    #output path for model predictions
     parser.add_argument('-o', '--output_prefix', dest='output_prefix',
         help="output path for model predictions")
     args = parser.parse_args()

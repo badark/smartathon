@@ -93,28 +93,52 @@ def main(args):
 
     trainer.run(train_iterator, max_epochs=15)
 
+#Input Arguments
+#-m: type of model to train, see utils.py for supported model types
+#--old_classes: to run with the old number of classes
+#--horiz_flip: to randomly flip images horizontally during training
+#-op: type of optimizer for training, see utils.py for supported optimizer types
+#-s: type of scheduler for training, see utils.py for supported scheduler types
+#-d: root directory of the dataset
+#-b: batch size during training
+#-vb: batch size during validation
+#-o: output path for model checkpoints
+#--lr: learning rate for optimizer
+#--wd: sets the weight decay for optimizer
 if __name__ == "__main__":
+    #Process some integers
     parser = ArgumentParser(description='Process some integers.')
+    #type of model to train, see utils.py for supported model types
     parser.add_argument('-m', '--model_type', dest='model_type', default="resnet50",
         help='type of model to train, see utils.py for supported model types')
+    #to run with the old number of classes
     parser.add_argument('--old_classes', dest='old_classes', default=False, action='store_true',
         help="to run with the old number of classes")
+    #to randomly flip images horizontally during training
     parser.add_argument('--horiz_flip', dest='horiz_flip', default=False, action='store_true',
         help="to randomly flip images horizontally during training")
+    #type of optimizer for training, see utils.py for supported optimizer types
     parser.add_argument('-op', '--optim_type', dest='optim_type', default="sgd",
         help='type of optimizer for training, see utils.py for supported optimizer types')
+    #type of scheduler for training, see utils.py for supported scheduler types
     parser.add_argument('-s', '--sched_type', dest='lr_schedule_type', default="linear",
         help='type of scheduler for training, see utils.py for supported scheduler types')
+    #root directory of the dataset
     parser.add_argument('-d', '--data_dir', dest='data_dir', 
         help='root directory of the dataset')
+    #batch size during training
     parser.add_argument('-b', '--batch_size', dest='batch_size', default=8, type=int,
         help="batch size during training")
+    #batch size during validation
     parser.add_argument('-vb', '--valid_batch_size', dest='valid_batch_size', default=8, type=int,
         help="batch size during validation")
+    #output path for model checkpoints
     parser.add_argument('-o', '--output_prefix', dest='output_prefix',
         help="output path for model checkpoints")
+    #learning rate for optimizer
     parser.add_argument('--lr', dest='learning_rate', type=float, default=1e-5,
         help="learning rate for optimizer")
+    #sets the weight decay for optimizer
     parser.add_argument('--wd', dest='weight_decay', type=float, default=0.0005,
         help="sets the weight decay for optimizer")
     args = parser.parse_args()
