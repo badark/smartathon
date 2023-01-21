@@ -104,9 +104,6 @@ def write_string_csv(string_list, header, filename):
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=None, Inverted=False):
 
-  #since the images are resized resize the bounding boxes coordinates
-  x = list(map(lambda x: x/2, x))
-
   # Plots one bounding box on image img
   tl = line_thickness or 2 # line thickness
   c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
@@ -166,7 +163,7 @@ def show_images(ground_truth_dict, final_dict_data):
     imagePath= '../data/resized_images/'
     show_dict = final_dict_data
 
-    for key in show_dict.keys():
+    for key in list(show_dict.keys())[:20]:
         
         all_coords = []
         labels_img = []
@@ -192,17 +189,36 @@ def show_images(ground_truth_dict, final_dict_data):
         img = cv2.imread(os.path.join(imagePath, key))
 
         for item, coord in enumerate(all_coords):
-            #print(item)
-            #print(labels_img[item][0][0])
             plot_one_box(coord,img, color=(0, 255, 0), label=labels_img[item][0][0], line_thickness=2)
-            plot_one_box(ground_all_coords[item],img, color=(255, 0, 0), label=ground_label_img[item][0][0], line_thickness=2)
+            plot_one_box(ground_all_coords[item],img, color=(0, 0, 255), label=ground_label_img[item][0][0], line_thickness=2)
+        
+        def display_img(cv2_img):
+            color_coverted = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+            display(Image.fromarray(color_coverted))
+        
+        display_img(img)
 
-        im_pil = Image.fromarray(img)
 
-        #add in code to process ground truth image
+def bb_intersection_over_union(boxA, boxB):
+    # determine the (x, y)-coordinates of the intersection rectangle
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
 
-        #put the two images side-by-side
-        #Image.fromarray(np.hstack((np.array(im_pil),np.array(im_pil)))).show()
+    # compute the area of intersection rectangle
+    interArea = abs(max((xB - xA, 0)) * max((yB - yA), 0))
+    if interArea == 0:
+        return 0
+    # compute the area of both the prediction and ground-truth
+    # rectangles
+    boxAArea = abs((boxA[2] - boxA[0]) * (boxA[3] - boxA[1]))
+    boxBArea = abs((boxB[2] - boxB[0]) * (boxB[3] - boxB[1]))
 
-        #show single image
-        im_pil.show()
+    # compute the intersection over union by taking the intersection
+    # area and dividing it by the sum of prediction + ground-truth
+    # areas - the interesection area
+    iou = interArea / float(boxAArea + boxBArea - interArea)
+
+    # return the intersection over union value
+    return iou

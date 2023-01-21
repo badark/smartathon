@@ -20,8 +20,10 @@ csv_data = pd.read_csv(train_csv_path)
 # remove the BAD_STREETLIGHT example
 csv_data = csv_data[csv_data['name'] != 'BAD_STREETLIGHT']
 dict_data = csv_to_dict(csv_data=csv_data)
+json.dump(dict_data, open(root_dir + '\\data\\train.json', 'w'))
 
 dict_data_keys = list(dict_data.keys())
+
 # we shuffle the list
 random.seed(14)
 random.shuffle(dict_data_keys)
