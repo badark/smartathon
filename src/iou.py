@@ -48,7 +48,6 @@ if __name__ == '__main__':
     boxA = [701, 211, 797, 262]
     boxB = [700, 215, 800, 250]
 
-
 # Load CSV - ground truth and model output
 
 # Process CSV file and convert to dictionary (key by image path) and will gather bounding boxes
@@ -63,10 +62,12 @@ result_csv_path = '../data/evaluation.csv'
 csv_data = pd.read_csv(result_csv_path)
 result_dict_data = csv_to_dict(csv_data=csv_data)
 
-# Pair n boxes to k boxes, calculate centroid of each box and measure distance, closest ones to each other will be paired
 images_to_print = defaultdict(list)
 groundTruth_mage = defaultdict(list)
-
+mislabeled, bad_iou, unpaired, total_bb = 0,0,0,0
+all_problematic_bb = []
+accurate_predictions = defaultdict(list)
+accurate_ground_truth = defaultdict(list)
 #show_images_single(result_dict_data)
 
 for key in dict_data.keys():
@@ -75,10 +76,13 @@ for key in dict_data.keys():
     model_output_bb = []
     model_output_centroids = []
     problematic_bb = []
+  
+
 
     for label_dict in dict_data[key]:
         #ground truth boxes
-        xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]     
+        xmax, xmin, ymax, ymin = [label_dict.get(key) for key in ['xmax', 'xmin', 'ymax', 'ymin']]
+        total_bb+=1
         ground_truth_bb.append([xmin, ymin, xmax, ymax])
         #print(xmax, xmin, ymax, ymin)
 
@@ -109,7 +113,7 @@ for key in dict_data.keys():
     problematic_bb = []
     gt_bb_inds = np.ones(num_gt_bbox)
     mo_bb_inds = np.ones(num_mo_bbox)
-    while np.sum(gt_bb_inds) and np.sum(mo_bb_inds):
+    while np.sum(gt_bb_inds) and np.sum(mo_bb_inds) and iou_table[:].sum():
         u, v = np.unravel_index(iou_table.argmax(), iou_table.shape)
         #print(iou_table)
         #print(u,v)
@@ -120,42 +124,82 @@ for key in dict_data.keys():
         #Then we found one that has different class names so lets just continue and not add
         #that to the list of paired_bbs
         if dict_data.get(key)[u].get('name') != result_dict_data.get(key)[v].get('name'):
+            #good IOU, labels don't match
+            mislabeled+=1
             problematic_bb.append((u,v))
+            all_problematic_bb.append((u,v))
             gt_bb_inds[u] = 0
             mo_bb_inds[v] = 0
             iou_table[u,:] = 0.0
             iou_table[:,v] = 0.0
+
+            #Need to capture the ground truth image once
+            images_to_print[key].append(result_dict_data.get(key)[v])
+            groundTruth_mage[key].append(dict_data.get(key)[u])
+
             continue
 
-        
+        if dict_data.get(key)[u].get('name') == result_dict_data.get(key)[v].get('name') and iou_table[u,v] < 0.5:
+            #bad IOU, labels match
+            bad_iou+=1
+            problematic_bb.append((u,v))
+            all_problematic_bb.append((u,v))
+            gt_bb_inds[u] = 0
+            mo_bb_inds[v] = 0
+            iou_table[u,:] = 0.0
+            iou_table[:,v] = 0.0
+
+            #Need to capture the ground truth image once
+            images_to_print[key].append(result_dict_data.get(key)[v])
+            groundTruth_mage[key].append(dict_data.get(key)[u])
+
+            continue
+
+       
         gt_bb_inds[u] = 0
         mo_bb_inds[v] = 0
         iou_table[u,:] = 0.0
         iou_table[:,v] = 0.0
         #print(iou_table)
+        accurate_predictions[key].append(result_dict_data.get(key)[v])
+        accurate_ground_truth[key].append(dict_data.get(key)[u])
         #we might not even need to store this here as 
-        paired_bbs.append((u,v))
-        #Need to capture the ground truth image once
-        images_to_print[key].append(result_dict_data.get(key)[v])
-        groundTruth_mage[key].append(dict_data.get(key)[u])
-        
-    print("problematic_bb", problematic_bb)
-    print(paired_bbs)
+        # paired_bbs.append((u,v))
+
+    for i in gt_bb_inds:
+        if i == 1:
+            unpaired+=1
+            problematic_bb.append(i)
+            all_problematic_bb.append((u,v))
+    for j in mo_bb_inds:
+        if j == 1:
+            unpaired+=1
+            problematic_bb.append(j)  
+            all_problematic_bb.append((u,v))
+
+    # print("problematic_bb", problematic_bb)
+    # print(paired_bbs)
 
 
-print(groundTruth_mage)
+#print(groundTruth_mage)
 #df = pd.DataFrame.from_dict(groundTruth_mage)
 #print(df.to_string())
 
 #df = pd.DataFrame.from_dict(images_to_print)
 #print(df.to_string())
-print(images_to_print)
-show_images(groundTruth_mage,images_to_print) #test to show images from results we will need to move this to the right spot
-#calculate centroid given 2 coordinates
-#(x min + xmax)/2; (ymin+ymax)/2
+#print(images_to_print)
 
-#calc_centroid()
+print(dict_data)
+
+print("Statistics: ")
+print("Number of total bb's in ground truth set: ", total_bb)
+print("Number of problematic bb's: ", len(all_problematic_bb))
+print("/*%* of problematic bb's: ", ((len(all_problematic_bb))/(total_bb)*100))
+print("Number of mislabeled: ", mislabeled)
+print("Correctly labeled but low IOU: ", bad_iou)
+print("Unpaired boxes: ", unpaired)
+
+show_images(groundTruth_mage,images_to_print) #test to show images from results we will need to move this to the right spot
+#show_images(accurate_ground_truth,accurate_predictions) #test to show images from results we will need to move this to the right spot
 
 # for extra, label as "bad"; for fewer label 'recall'
-
-
