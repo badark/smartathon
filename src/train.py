@@ -90,6 +90,7 @@ def main(args):
         save_checkpoint(model, optimizer, meanAP_metrics, chkpt_path)
         meanAP.reset()
 
+
     trainer.run(train_iterator, max_epochs=10)
 
 if __name__ == "__main__":
